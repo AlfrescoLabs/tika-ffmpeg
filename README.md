@@ -1,11 +1,11 @@
 Overview
 ========
 
-An [Apache Tika|http://tika.apache.org/] parser which uses the 
-[FFmpeg|https://www.ffmpeg.org/] command-line tool to extract metadata
+An [Apache Tika](http://tika.apache.org/) parser which uses the 
+[FFmpeg](https://www.ffmpeg.org/) command-line tool to extract metadata
 from audio and video files.
 
-The metadata is reported using part of the [PBCore 2.0 specification|http://www.pbcore.org/schema/]
+The metadata is reported using part of the [PBCore 2.0 specification](http://www.pbcore.org/schema/)
 in an XPath-like syntax, i.e.:
 
     pbcore:instantiationDuration=00:00:01.07
