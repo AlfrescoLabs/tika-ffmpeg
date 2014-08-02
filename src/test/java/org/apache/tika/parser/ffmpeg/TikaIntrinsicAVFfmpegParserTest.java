@@ -50,7 +50,9 @@ public class TikaIntrinsicAVFfmpegParserTest
         // Pattern checking is done in a new Thread which must be allowed to finish
         Thread.sleep(500);
         
-        assertEquals("00:00:01.07", metadata.get(PBCore.INSTANTIATION_DURATION));
+        // Last digit may vary on FFmpeg version
+        assertTrue("Expected duration to start with 00:00:01.0",
+                metadata.get(PBCore.INSTANTIATION_DURATION).startsWith("00:00:01.0"));
         assertEquals("362 kb/s", metadata.get(PBCore.INSTANTIATION_DATA_RATE));
         
         assertEquals("Video", metadata.get(PBCore.ESSENCE_TRACK_TYPE(0)));
