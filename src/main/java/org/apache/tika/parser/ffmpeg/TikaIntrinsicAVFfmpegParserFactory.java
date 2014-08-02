@@ -74,7 +74,7 @@ public class TikaIntrinsicAVFfmpegParserFactory
 //                    Pattern.compile(""),
 //                    PBCore.ESSENCE_TRACK_STANDARD(i).getName());
             extractionPatterns.put(
-                    Pattern.compile(STREAM_PREFIX_FORMAT + i + ".*: (\\w*) [\\(,]"),
+                    Pattern.compile(STREAM_PREFIX_FORMAT + i + ".*: (\\w*)( \\(|,)"),
                     PBCore.ESSENCE_TRACK_ENCODING(i).getName());
             extractionPatterns.put(
                     Pattern.compile(STREAM_PREFIX_FORMAT + i + ".*, (\\d+ kb/s)"), 
