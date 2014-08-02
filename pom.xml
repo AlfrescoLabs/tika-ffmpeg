@@ -28,7 +28,7 @@
   <artifactId>tika-ffmpeg</artifactId>
   <packaging>jar</packaging>
   <name>Apache Tika FFmpeg</name>
-  <version>1.6-20140721</version>
+  <version>1.6-20140802</version>
   <url>http://tika.apache.org/</url>
 
   <properties>
