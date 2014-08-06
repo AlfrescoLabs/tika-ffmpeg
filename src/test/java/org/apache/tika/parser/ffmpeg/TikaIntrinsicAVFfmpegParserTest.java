@@ -37,11 +37,13 @@ public class TikaIntrinsicAVFfmpegParserTest
     private static final Log logger = LogFactory.getLog(TikaIntrinsicAVFfmpegParserTest.class);
 
     @Test
-    public void testExtract() throws Exception
+    public void testExtractMp4() throws Exception
     {
         Parser parser = TikaIntrinsicAVFfmpegParserFactory.createInstance("ffmpeg");
         
         Metadata metadata = new Metadata();
+        
+        String testFilePath = "/test-documents/testMP4.mp4";
         
         InputStream stream = this.getClass().getResourceAsStream("/test-documents/testMP4.mp4");
         
@@ -71,8 +73,53 @@ public class TikaIntrinsicAVFfmpegParserTest
         
         for(String tikaKey : metadata.names()) 
         {
-            logger.debug(tikaKey + "=" + metadata.get(tikaKey));
-//            System.out.println(tikaKey + "=" + metadata.get(tikaKey));
+            logger.debug("(" + testFilePath + ") " + tikaKey + "=" + metadata.get(tikaKey));
+        }
+    }
+    
+    @Test
+    public void testExtractMov() throws Exception
+    {
+        Parser parser = TikaIntrinsicAVFfmpegParserFactory.createInstance("ffmpeg");
+        
+        Metadata metadata = new Metadata();
+        
+        String testFilePath = "/test-documents/testMOV.mov";
+        
+        InputStream stream = this.getClass().getResourceAsStream(testFilePath);
+        
+        parser.parse(stream, new ToTextContentHandler(), metadata, new ParseContext());
+        
+        // Pattern checking is done in a new Thread which must be allowed to finish
+        Thread.sleep(500);
+        
+        // Last digit may vary on FFmpeg version
+        assertTrue("Expected duration to start with 00:00:01.0",
+                metadata.get(PBCore.INSTANTIATION_DURATION).startsWith("00:00:01.0"));
+        
+        assertEquals("Video", metadata.get(PBCore.ESSENCE_TRACK_TYPE(0)));
+        assertEquals("h264", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(0)));
+        assertEquals("29.97 fps", metadata.get(PBCore.ESSENCE_TRACK_FRAME_RATE(0)));
+        assertEquals("480x270", metadata.get(PBCore.ESSENCE_TRACK_FRAME_SIZE(0)));
+        assertEquals("eng", metadata.get(PBCore.ESSENCE_TRACK_LANGUAGE(0)));
+        
+        assertEquals("Audio", metadata.get(PBCore.ESSENCE_TRACK_TYPE(1)));
+        assertEquals("pcm_s16le", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(1)));
+        assertEquals("48000 Hz", metadata.get(PBCore.ESSENCE_TRACK_SAMPLING_RATE(1)));
+        assertEquals("eng", metadata.get(PBCore.ESSENCE_TRACK_LANGUAGE(1)));
+        
+        assertEquals("Audio", metadata.get(PBCore.ESSENCE_TRACK_TYPE(2)));
+        assertEquals("pcm_s16le", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(2)));
+        assertEquals("48000 Hz", metadata.get(PBCore.ESSENCE_TRACK_SAMPLING_RATE(2)));
+        assertEquals("eng", metadata.get(PBCore.ESSENCE_TRACK_LANGUAGE(2)));
+        
+        assertEquals("Subtitle", metadata.get(PBCore.ESSENCE_TRACK_TYPE(3)));
+        assertEquals("eia_608", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(3)));
+        assertEquals("eng", metadata.get(PBCore.ESSENCE_TRACK_LANGUAGE(3)));
+        
+        for(String tikaKey : metadata.names()) 
+        {
+            logger.debug("(" + testFilePath + ") " + tikaKey + "=" + metadata.get(tikaKey));
         }
     }
 
