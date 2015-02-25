@@ -49,9 +49,6 @@ public class TikaIntrinsicAVFfmpegParserTest
         
         parser.parse(stream, new ToTextContentHandler(), metadata, new ParseContext());
         
-        // Pattern checking is done in a new Thread which must be allowed to finish
-        Thread.sleep(500);
-        
         // Last digit may vary on FFmpeg version
         assertTrue("Expected duration to start with 00:00:01.0",
                 metadata.get(PBCore.INSTANTIATION_DURATION).startsWith("00:00:01.0"));
@@ -89,9 +86,6 @@ public class TikaIntrinsicAVFfmpegParserTest
         InputStream stream = this.getClass().getResourceAsStream(testFilePath);
         
         parser.parse(stream, new ToTextContentHandler(), metadata, new ParseContext());
-        
-        // Pattern checking is done in a new Thread which must be allowed to finish
-        Thread.sleep(500);
         
         // Last digit may vary on FFmpeg version
         assertTrue("Expected duration to start with 00:00:01.0",
