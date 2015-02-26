@@ -41,17 +41,31 @@ public class TikaIntrinsicAVFfmpegParserTest
     {
         Parser parser = TikaIntrinsicAVFfmpegParserFactory.createInstance("ffmpeg");
         
+        Metadata extractedMetadata = new Metadata();
         Metadata metadata = new Metadata();
         
         String testFilePath = "/test-documents/testMP4.mp4";
         
-        InputStream stream = this.getClass().getResourceAsStream("/test-documents/testMP4.mp4");
+        InputStream stream = this.getClass().getResourceAsStream(testFilePath);
         
-        parser.parse(stream, new ToTextContentHandler(), metadata, new ParseContext());
+        parser.parse(stream, new ToTextContentHandler(), extractedMetadata, new ParseContext());
         
+        // Immediately copy to avoid polluting our test of timing with assertions or logging
+        for (String tikaKey : extractedMetadata.names()) 
+        {
+            metadata.add(tikaKey, extractedMetadata.get(tikaKey));
+        }
+        
+        // Let's see what we've got
+        for (String copyKey : metadata.names()) {
+            logger.debug("(" + testFilePath + ") " + copyKey + "=" + metadata.get(copyKey));
+        }
+        
+        String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
+        assertNotNull("Duration was null", duration);
         // Last digit may vary on FFmpeg version
         assertTrue("Expected duration to start with 00:00:01.0",
-                metadata.get(PBCore.INSTANTIATION_DURATION).startsWith("00:00:01.0"));
+                duration.startsWith("00:00:01.0"));
         assertEquals("362 kb/s", metadata.get(PBCore.INSTANTIATION_DATA_RATE));
         
         assertEquals("Video", metadata.get(PBCore.ESSENCE_TRACK_TYPE(0)));
@@ -67,11 +81,6 @@ public class TikaIntrinsicAVFfmpegParserTest
         assertEquals("46 kb/s", metadata.get(PBCore.ESSENCE_TRACK_DATA_RATE(1)));
         assertEquals("22050 Hz", metadata.get(PBCore.ESSENCE_TRACK_SAMPLING_RATE(1)));
         assertEquals("eng", metadata.get(PBCore.ESSENCE_TRACK_LANGUAGE(1)));
-        
-        for(String tikaKey : metadata.names()) 
-        {
-            logger.debug("(" + testFilePath + ") " + tikaKey + "=" + metadata.get(tikaKey));
-        }
     }
     
     @Test
@@ -79,17 +88,32 @@ public class TikaIntrinsicAVFfmpegParserTest
     {
         Parser parser = TikaIntrinsicAVFfmpegParserFactory.createInstance("ffmpeg");
         
+        Metadata extractedMetadata = new Metadata();
         Metadata metadata = new Metadata();
         
         String testFilePath = "/test-documents/testMOV.mov";
         
         InputStream stream = this.getClass().getResourceAsStream(testFilePath);
         
-        parser.parse(stream, new ToTextContentHandler(), metadata, new ParseContext());
+        parser.parse(stream, new ToTextContentHandler(), extractedMetadata, new ParseContext());
         
+        // Immediately copy to avoid polluting our test of timing with assertions or logging
+        for (String tikaKey : extractedMetadata.names()) 
+        {
+            metadata.add(tikaKey, extractedMetadata.get(tikaKey));
+        }
+        
+        // Let's see what we've got
+        for(String tikaKey : metadata.names()) 
+        {
+            logger.debug("(" + testFilePath + ") " + tikaKey + "=" + metadata.get(tikaKey));
+        }
+        
+        String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
+        assertNotNull("Duration was null", duration);
         // Last digit may vary on FFmpeg version
         assertTrue("Expected duration to start with 00:00:01.0",
-                metadata.get(PBCore.INSTANTIATION_DURATION).startsWith("00:00:01.0"));
+                duration.startsWith("00:00:01.0"));
         
         assertEquals("Video", metadata.get(PBCore.ESSENCE_TRACK_TYPE(0)));
         assertEquals("h264", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(0)));
@@ -110,11 +134,6 @@ public class TikaIntrinsicAVFfmpegParserTest
         assertEquals("Subtitle", metadata.get(PBCore.ESSENCE_TRACK_TYPE(3)));
         assertEquals("eia_608", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(3)));
         assertEquals("eng", metadata.get(PBCore.ESSENCE_TRACK_LANGUAGE(3)));
-        
-        for(String tikaKey : metadata.names()) 
-        {
-            logger.debug("(" + testFilePath + ") " + tikaKey + "=" + metadata.get(tikaKey));
-        }
     }
 
 }
