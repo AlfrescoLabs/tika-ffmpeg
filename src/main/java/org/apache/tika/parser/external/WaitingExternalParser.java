@@ -40,11 +40,11 @@ import org.xml.sax.SAXException;
  * (done in a separate thread) to complete after the command-line
  * process has finished.
  */
-public class WaitingExternalParser extends ExternalParser {
+public class WaitingExternalParser extends ExternalParserNew {
 
     private static final long serialVersionUID = -6609930740380464837L;
     
-    private static final long PATTERN_MATCHING_DELAY_MS = 20;
+    private static final long PATTERN_MATCHING_DELAY_MS = 40;
 
     @Override
     public void parse(

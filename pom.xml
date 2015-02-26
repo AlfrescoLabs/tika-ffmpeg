@@ -35,7 +35,7 @@
     <maven.compile.source>1.5</maven.compile.source>
     <maven.compile.target>1.5</maven.compile.target>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <tika.version>1.6-SNAPSHOT</tika.version>
+    <tika.version>1.6</tika.version>
   </properties>
 
   <licenses>

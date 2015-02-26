@@ -86,6 +86,15 @@ public class TikaIntrinsicAVFfmpegParserTest
     @Test
     public void testExtractMov() throws Exception
     {
+        for (int i = 0; i < 1; i ++)
+        {
+            System.out.println("i=" + i);
+            testExtractMovImpl();
+        }
+    }
+    
+    public void testExtractMovImpl() throws Exception
+    {
         Parser parser = TikaIntrinsicAVFfmpegParserFactory.createInstance("ffmpeg");
         
         Metadata extractedMetadata = new Metadata();
@@ -111,6 +120,10 @@ public class TikaIntrinsicAVFfmpegParserTest
         
         String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
         assertNotNull("Duration was null", duration);
+        
+        System.out.println("Printing metadata after calling parse and before asserting. \n" + metadata);
+        System.out.println("Done printing metadata object.");
+        
         // Last digit may vary on FFmpeg version
         assertTrue("Expected duration to start with 00:00:01.0",
                 duration.startsWith("00:00:01.0"));
