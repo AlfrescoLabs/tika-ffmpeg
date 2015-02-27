@@ -316,7 +316,6 @@ public class WaitingExternalParser extends AbstractParser {
              try {
                 String line;
                 while ( (line = reader.readLine()) != null ) {
-                    System.out.println(line);
                    for(Pattern p : metadataPatterns.keySet()) {
                       Matcher m = p.matcher(line);
                       if(m.find()) {

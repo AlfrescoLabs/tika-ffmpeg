@@ -34,7 +34,8 @@ import org.junit.Test;
 
 public class TikaIntrinsicAVFfmpegParserTest
 {
-    private static final int NUM_TEST_RUNS = 1000;
+    private static final int MAX_SLEEP_MS = 100;
+    private static final int NUM_TEST_RUNS = 10;
     private static final Log logger = LogFactory.getLog(TikaIntrinsicAVFfmpegParserTest.class);
 
     @Test
@@ -87,6 +88,10 @@ public class TikaIntrinsicAVFfmpegParserTest
     }
     
     @Test
+    /**
+     * Runs the test multiple times adding a variable amount of time between tests
+     * @throws Exception
+     */
     public void testExtractMov() throws Exception
     {
         for (int i = 0; i < NUM_TEST_RUNS; i ++)
@@ -95,7 +100,7 @@ public class TikaIntrinsicAVFfmpegParserTest
             testExtractMovImpl();
             
             // We sleep for some random amount of time, adding volatility to wring-out timing issues
-            Thread.sleep((long) (Math.random() * 10)); 
+            Thread.sleep(Math.round(Math.random() * MAX_SLEEP_MS)); 
         }
     }
     
