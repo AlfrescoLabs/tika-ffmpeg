@@ -64,6 +64,11 @@ public class WaitingExternalParser extends AbstractParser {
      */
     public static final String OUTPUT_FILE_TOKEN = "${OUTPUT}";
 
+    /*
+     * A minute to wait for parsing seems more than enough time, but it's definitely better than forever.
+     */
+    private static final long MAX_WAIT_TIME_MS = 60 * 1000;
+
     /**
      * Media types supported by the external program.
      */
@@ -179,8 +184,8 @@ public class WaitingExternalParser extends AbstractParser {
            process = Runtime.getRuntime().exec( cmd );
         }
 
-        Thread stdoutParser = null;
-        Thread stderrParser = null;
+        Parser stdoutParser = null;
+        Parser stderrParser = null;
         try {
             if(inputToStdIn) {
                sendInput(process, stream);
@@ -213,29 +218,45 @@ public class WaitingExternalParser extends AbstractParser {
                 process.waitFor();
             } catch (InterruptedException ignore) {
             }
-            
-            waitForParserToFinish(stdoutParser);
-            waitForParserToFinish(stderrParser);
         }
 
         // Grab the output if we haven't already
         if (!outputFromStdOut) {
             extractOutput(new FileInputStream(output), xhtml);
         }
+        
+        waitForParserToFinish(stdoutParser);
+        waitForParserToFinish(stderrParser);
     }
     
-    private void waitForParserToFinish(Thread parser)
+    private void waitForParserToFinish(Parser parser) throws IOException
     {
         if (parser != null)
         {
             try 
             {
-                parser.join();
+                parser.join(MAX_WAIT_TIME_MS);
             }
-            catch (InterruptedException e)
+            catch (InterruptedException ignore)
             {
-                // Do nothing. The thread is finished.
+                // This happens only if client code calls interrupt on this thread.
             }
+            
+            // Checks that the parser finished successfully
+            if (parser.isDone)
+            {
+                if (parser.ioException != null)
+                {
+                    // The parser was stopped by an IOException, so let the client know.
+                    throw parser.ioException;
+                }
+            }
+            else
+            {
+                parser.interrupt();
+                throw new IOException("The parser took too long to parse the output from the external command.");
+            }
+            
         }
     }
 
@@ -309,29 +330,37 @@ public class WaitingExternalParser extends AbstractParser {
         }.start();
     }
     
-    private Thread extractMetadata(final InputStream stream, final Metadata metadata) {
-        Thread thread = new Thread() {
-          public void run() {
-             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-             try {
-                String line;
-                while ( (line = reader.readLine()) != null ) {
-                   for(Pattern p : metadataPatterns.keySet()) {
-                      Matcher m = p.matcher(line);
-                      if(m.find()) {
-                         metadata.add( metadataPatterns.get(p), m.group(1) );
-                      }
-                   }
-                }
-             } catch (IOException e) {
-             } finally {
-                IOUtils.closeQuietly(reader);
-                IOUtils.closeQuietly(stream);
+    private class Parser extends Thread
+    {
+        public volatile boolean isDone = false;
+        public volatile IOException ioException = null;
+    }
+    
+    private Parser extractMetadata(final InputStream stream, final Metadata metadata) {
+        Parser parser = new Parser() {
+            public void run() {
+               BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+               try {
+                  String line;
+                  while ( (line = reader.readLine()) != null ) {
+                     for(Pattern p : metadataPatterns.keySet()) {
+                        Matcher m = p.matcher(line);
+                        if(m.find()) {
+                           metadata.add( metadataPatterns.get(p), m.group(1) );
+                        }
+                     }
+                  }
+               } catch (IOException e) {
+                   this.ioException = e;
+               } finally {
+                  IOUtils.closeQuietly(reader);
+                  IOUtils.closeQuietly(stream);
+                  this.isDone = true;
+              }
             }
-          }
-       };
-       thread.start();
-       return thread;
+        };
+       parser.start();
+       return parser;
     }
     
     /**
