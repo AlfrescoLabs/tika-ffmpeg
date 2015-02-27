@@ -38,6 +38,15 @@ public class TikaIntrinsicAVFfmpegParserTest
     private static final int NUM_TEST_RUNS = 10;
     private static final Log logger = LogFactory.getLog(TikaIntrinsicAVFfmpegParserTest.class);
 
+    protected void logMetadata(String message, String testFilePath, Metadata metadata)
+    {
+        String output = message + ":";
+        for (String copyKey : metadata.names()) {
+            output = output + "\n  (" + testFilePath + ") " + copyKey + "=" + metadata.get(copyKey);
+        }
+        logger.debug(output);
+    }
+    
     @Test
     public void testExtractMp4() throws Exception
     {
@@ -59,11 +68,10 @@ public class TikaIntrinsicAVFfmpegParserTest
         }
         
         // Let's see what we've got
-        logger.debug("For " + testFilePath
-                        + "\nPrinting extractedMetadata after calling parse and before asserting. \n" 
-                        + extractedMetadata + "\nDone printing extractedMetadata object.");
-        logger.debug("Printing metadata after calling parse and before asserting. \n" + metadata
-                        + "\nDone printing metadata object.");
+        logMetadata("extractedMetadata after calling parse and before asserting", 
+                testFilePath, extractedMetadata);
+        logMetadata("metadata after calling parse and before asserting", 
+                testFilePath, metadata);
         
         String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
         assertNotNull("Duration was null", duration);
@@ -96,15 +104,14 @@ public class TikaIntrinsicAVFfmpegParserTest
     {
         for (int i = 0; i < NUM_TEST_RUNS; i ++)
         {
-            logger.debug("i=" + i);
-            testExtractMovImpl();
+            testExtractMovImpl(i);
             
             // We sleep for some random amount of time, adding volatility to wring-out timing issues
             Thread.sleep(Math.round(Math.random() * MAX_SLEEP_MS)); 
         }
     }
     
-    public void testExtractMovImpl() throws Exception
+    public void testExtractMovImpl(int i) throws Exception
     {
         Parser parser = TikaIntrinsicAVFfmpegParserFactory.createInstance("ffmpeg");
         
@@ -124,11 +131,10 @@ public class TikaIntrinsicAVFfmpegParserTest
         }
         
         // Let's see what we've got
-        logger.debug("For " + testFilePath
-                        + "\nPrinting extractedMetadata after calling parse and before asserting. \n" 
-                        + extractedMetadata + "\nDone printing extractedMetadata object.");
-        logger.debug("Printing metadata after calling parse and before asserting. \n" + metadata
-                        + "\nDone printing metadata object.");
+        logMetadata("extractedMetadata after calling parse and before asserting (iteration " + i + ")", 
+                testFilePath, extractedMetadata);
+        logMetadata("metadata after calling parse and before asserting (iteration " + i + ")", 
+                testFilePath, metadata);
         
         String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
         assertNotNull("Duration was null", duration);

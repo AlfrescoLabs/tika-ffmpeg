@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,10 +65,11 @@ public class WaitingExternalParser extends AbstractParser {
      */
     public static final String OUTPUT_FILE_TOKEN = "${OUTPUT}";
 
-    /*
-     * A minute to wait for parsing seems more than enough time, but it's definitely better than forever.
+    /**
+     * A minute to wait for parsing seems more than enough time, 
+     * but it's definitely better than forever.
      */
-    private static final long MAX_WAIT_TIME_MS = 60 * 1000;
+    private static final long MAX_STREAM_PARSE_WAIT_TIME_MS = 60 * 1000;
 
     /**
      * Media types supported by the external program.
@@ -184,8 +186,8 @@ public class WaitingExternalParser extends AbstractParser {
            process = Runtime.getRuntime().exec( cmd );
         }
 
-        Parser stdoutParser = null;
-        Parser stderrParser = null;
+        StreamParserThread stdoutStreamParserThread = null;
+        StreamParserThread stderrStreamParserThread = null;
         try {
             if(inputToStdIn) {
                sendInput(process, stream);
@@ -197,12 +199,12 @@ public class WaitingExternalParser extends AbstractParser {
             InputStream err = process.getErrorStream();
             
             if(hasPatterns) {
-               stderrParser = extractMetadata(err, metadata);
+               stderrStreamParserThread = extractMetadata(err, metadata);
                
                if(outputFromStdOut) {
                   extractOutput(out, xhtml);
                } else {
-                  stdoutParser = extractMetadata(out, metadata);
+                  stdoutStreamParserThread = extractMetadata(out, metadata);
                }
             } else {
                ignoreStream(err);
@@ -217,6 +219,14 @@ public class WaitingExternalParser extends AbstractParser {
             try {
                 process.waitFor();
             } catch (InterruptedException ignore) {
+                if (stdoutStreamParserThread != null)
+                {
+                    stdoutStreamParserThread.interrupt();
+                }
+                if (stderrStreamParserThread != null)
+                {
+                    stderrStreamParserThread.interrupt();
+                }
             }
         }
 
@@ -225,41 +235,47 @@ public class WaitingExternalParser extends AbstractParser {
             extractOutput(new FileInputStream(output), xhtml);
         }
         
-        waitForParserToFinish(stdoutParser);
-        waitForParserToFinish(stderrParser);
+        try {
+            waitForStreamParserThread(stdoutStreamParserThread);
+        } catch (TimeoutException e) {
+            throw new TikaException("Timeout on read of command line output stream", e);
+        }
+        try {
+            waitForStreamParserThread(stderrStreamParserThread);
+        } catch (TimeoutException e) {
+            throw new TikaException("Timeout on read of command line error stream", e);
+        }
+        
     }
     
-    private void waitForParserToFinish(Parser parser) throws IOException
-    {
-        if (parser != null)
-        {
-            try 
-            {
-                parser.join(MAX_WAIT_TIME_MS);
-            }
-            catch (InterruptedException ignore)
-            {
-                // This happens only if client code calls interrupt on this thread.
-            }
-            
-            // Checks that the parser finished successfully
-            if (parser.isDone)
-            {
-                if (parser.ioException != null)
-                {
-                    // The parser was stopped by an IOException, so let the client know.
-                    throw parser.ioException;
-                }
-            }
-            else
-            {
-                parser.interrupt();
-                throw new IOException("The parser took too long to parse the output from the external command.");
+    /**
+     * Waits for the output or error stream thread to complete its pattern
+     * matching or timeout.
+     * 
+     * @param streamParserThread
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    private void waitForStreamParserThread(StreamParserThread streamParserThread) throws IOException, TimeoutException {
+        if (streamParserThread != null) {
+            try {
+                streamParserThread.join(MAX_STREAM_PARSE_WAIT_TIME_MS);
+            } catch (InterruptedException ignore) {
+                // We were asked to stop, we'll ask the stream parser thread to stop too
+                streamParserThread.interrupt();
             }
             
+            if (streamParserThread.ioException != null) {
+                // The parser was stopped by an IOException, so let the client know.
+                throw streamParserThread.ioException;
+            }
+            // Did we timeout?
+            if (!streamParserThread.isComplete) {
+                throw new TimeoutException("Parsing output from the external command "
+                        + "exceeded timeout of " + MAX_STREAM_PARSE_WAIT_TIME_MS + "ms");
+            }
         }
     }
-
 
     /**
      * Starts a thread that extracts the contents of the standard output
@@ -330,14 +346,20 @@ public class WaitingExternalParser extends AbstractParser {
         }.start();
     }
     
-    private class Parser extends Thread
-    {
-        public volatile boolean isDone = false;
+    /**
+     * Extension of Thread for holding any {@link IOException} and tracking
+     * whether or not the thread ended due to timeout
+     */
+    private class StreamParserThread extends Thread {
+        /** Whether or not pattern matching of the entire stream is complete */
+        public volatile boolean isComplete = false;
+        
+        /** Any IOException encountered when reading the stream */
         public volatile IOException ioException = null;
     }
     
-    private Parser extractMetadata(final InputStream stream, final Metadata metadata) {
-        Parser parser = new Parser() {
+    private StreamParserThread extractMetadata(final InputStream stream, final Metadata metadata) {
+        StreamParserThread parserThread = new StreamParserThread() {
             public void run() {
                BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
                try {
@@ -350,17 +372,17 @@ public class WaitingExternalParser extends AbstractParser {
                         }
                      }
                   }
+                  this.isComplete = true;
                } catch (IOException e) {
                    this.ioException = e;
                } finally {
                   IOUtils.closeQuietly(reader);
                   IOUtils.closeQuietly(stream);
-                  this.isDone = true;
               }
             }
         };
-       parser.start();
-       return parser;
+        parserThread.start();
+        return parserThread;
     }
     
     /**
