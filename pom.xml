@@ -28,14 +28,14 @@
   <artifactId>tika-ffmpeg</artifactId>
   <packaging>jar</packaging>
   <name>Apache Tika FFmpeg</name>
-  <version>1.6-20150225</version>
+  <version>1.6-20150227</version>
   <url>http://tika.apache.org/</url>
 
   <properties>
     <maven.compile.source>1.5</maven.compile.source>
     <maven.compile.target>1.5</maven.compile.target>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <tika.version>1.6-SNAPSHOT</tika.version>
+    <tika.version>1.6</tika.version>
   </properties>
 
   <licenses>
