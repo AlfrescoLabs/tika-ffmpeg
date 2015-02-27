@@ -234,7 +234,7 @@ public class WaitingExternalParser extends AbstractParser {
             }
             catch (InterruptedException e)
             {
-                e.printStackTrace();
+                // Do nothing. The thread is finished.
             }
         }
     }
