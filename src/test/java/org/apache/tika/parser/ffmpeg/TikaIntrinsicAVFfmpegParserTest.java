@@ -34,6 +34,7 @@ import org.junit.Test;
 
 public class TikaIntrinsicAVFfmpegParserTest
 {
+    private static final int NUM_TEST_RUNS = 1000;
     private static final Log logger = LogFactory.getLog(TikaIntrinsicAVFfmpegParserTest.class);
 
     @Test
@@ -57,9 +58,11 @@ public class TikaIntrinsicAVFfmpegParserTest
         }
         
         // Let's see what we've got
-        for (String copyKey : metadata.names()) {
-            logger.debug("(" + testFilePath + ") " + copyKey + "=" + metadata.get(copyKey));
-        }
+        logger.debug("For " + testFilePath
+                        + "\nPrinting extractedMetadata after calling parse and before asserting. \n" 
+                        + extractedMetadata + "\nDone printing extractedMetadata object.");
+        logger.debug("Printing metadata after calling parse and before asserting. \n" + metadata
+                        + "\nDone printing metadata object.");
         
         String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
         assertNotNull("Duration was null", duration);
@@ -86,10 +89,12 @@ public class TikaIntrinsicAVFfmpegParserTest
     @Test
     public void testExtractMov() throws Exception
     {
-        for (int i = 0; i < 1000; i ++)
+        for (int i = 0; i < NUM_TEST_RUNS; i ++)
         {
-            System.out.println("i=" + i);
+            logger.debug("i=" + i);
             testExtractMovImpl();
+            
+            // We sleep for some random amount of time, adding volatility to wring-out timing issues
             Thread.sleep((long) (Math.random() * 10)); 
         }
     }
@@ -114,26 +119,19 @@ public class TikaIntrinsicAVFfmpegParserTest
         }
         
         // Let's see what we've got
-        for(String tikaKey : metadata.names()) 
-        {
-            logger.debug("(" + testFilePath + ") " + tikaKey + "=" + metadata.get(tikaKey));
-        }
-
-        System.out.println("Printing extractedMetadata after calling parse and before asserting. \n" + extractedMetadata);
-        System.out.println("Done printing extractedMetadata object.");
-        
-        System.out.println("Printing metadata after calling parse and before asserting. \n" + metadata);
-        System.out.println("Done printing metadata object.");
+        logger.debug("For " + testFilePath
+                        + "\nPrinting extractedMetadata after calling parse and before asserting. \n" 
+                        + extractedMetadata + "\nDone printing extractedMetadata object.");
+        logger.debug("Printing metadata after calling parse and before asserting. \n" + metadata
+                        + "\nDone printing metadata object.");
         
         String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
-//        if (duration == null) 
-//            System.out.println("Duration was null");
-//        else
-//        {
+        assertNotNull("Duration was null", duration);
+        
         // Last digit may vary on FFmpeg version
         assertTrue("Expected duration to start with 00:00:01.0",
                 duration.startsWith("00:00:01.0"));
-//        }
+        
         assertEquals("Video", metadata.get(PBCore.ESSENCE_TRACK_TYPE(0)));
         assertEquals("h264", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(0)));
         assertEquals("29.97 fps", metadata.get(PBCore.ESSENCE_TRACK_FRAME_RATE(0)));
@@ -154,5 +152,4 @@ public class TikaIntrinsicAVFfmpegParserTest
         assertEquals("eia_608", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(3)));
         assertEquals("eng", metadata.get(PBCore.ESSENCE_TRACK_LANGUAGE(3)));
     }
-
 }

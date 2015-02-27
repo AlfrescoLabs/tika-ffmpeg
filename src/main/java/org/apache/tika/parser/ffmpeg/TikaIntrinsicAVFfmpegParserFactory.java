@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.metadata.PBCore;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.external.ExternalParserNew;
 import org.apache.tika.parser.external.WaitingExternalParser;
 
 /**
@@ -49,7 +48,7 @@ public class TikaIntrinsicAVFfmpegParserFactory
      */
     public static Parser createInstance(String runtimeFfmpegExecutable)
     {
-        ExternalParserNew parser = new WaitingExternalParser();
+        WaitingExternalParser parser = new WaitingExternalParser();
         
         String[] command = new String[] { runtimeFfmpegExecutable + " " + FFMPEG_OPTIONS };
         
