@@ -81,6 +81,9 @@ public class ExternalParserNew extends AbstractParser {
      */
     private String[] command = new String[] { "cat" };
 
+    protected Thread stdoutParser;
+    protected Thread stderrParser;
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return getSupportedTypes();
     }
@@ -190,12 +193,12 @@ public class ExternalParserNew extends AbstractParser {
             InputStream err = process.getErrorStream();
             
             if(hasPatterns) {
-               extractMetadata(err, metadata);
+               this.stderrParser = extractMetadata(err, metadata);
                
                if(outputFromStdOut) {
                   extractOutput(out, xhtml);
                } else {
-                  extractMetadata(out, metadata);
+                  this.stdoutParser = extractMetadata(out, metadata);
                }
             } else {
                ignoreStream(err);
@@ -288,9 +291,9 @@ public class ExternalParserNew extends AbstractParser {
         }.start();
     }
     
-    private void extractMetadata(final InputStream stream, final Metadata metadata) {
+    private Thread extractMetadata(final InputStream stream, final Metadata metadata) {
         System.out.println("Called extractMetadata.");
-       new Thread() {
+       Thread thread = new Thread() {
           public void run() {
               System.out.println("Started run method");
              BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
@@ -312,8 +315,10 @@ public class ExternalParserNew extends AbstractParser {
             }
              System.out.println("Finished run method");
           }
-       }.start();
-       System.out.println("Finished extractMetadata");
+       };
+       thread.start();
+       System.out.println("Finished calling extractMetadata");
+       return thread;
     }
     
     /**

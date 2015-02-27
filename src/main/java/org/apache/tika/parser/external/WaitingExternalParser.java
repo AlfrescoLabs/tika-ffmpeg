@@ -44,8 +44,6 @@ public class WaitingExternalParser extends ExternalParserNew {
 
     private static final long serialVersionUID = -6609930740380464837L;
     
-    private static final long PATTERN_MATCHING_DELAY_MS = 40;
-
     @Override
     public void parse(
             InputStream stream, ContentHandler handler,
@@ -53,10 +51,24 @@ public class WaitingExternalParser extends ExternalParserNew {
             throws IOException, SAXException, TikaException {
         super.parse(stream, handler, metadata, context);
         // Pattern checking is done in a new Thread which must be allowed to finish
-        try {
-            Thread.sleep(PATTERN_MATCHING_DELAY_MS);
-        } catch (InterruptedException e) {
-            // We were asked to stop
+        waitForParserToFinish(super.stderrParser);
+        waitForParserToFinish(super.stdoutParser);
+    }
+
+    private void waitForParserToFinish(Thread parser)
+    {
+        if (parser != null)
+        {
+            try 
+            {
+                System.out.println(System.currentTimeMillis() + " Waiting for parser.");
+                parser.join();
+                System.out.println(System.currentTimeMillis() + " Parser completed.");
+            }
+            catch (InterruptedException e)
+            {
+                // Do nothing
+            }
         }
     }
 }

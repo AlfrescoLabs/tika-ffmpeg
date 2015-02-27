@@ -86,10 +86,11 @@ public class TikaIntrinsicAVFfmpegParserTest
     @Test
     public void testExtractMov() throws Exception
     {
-        for (int i = 0; i < 1; i ++)
+        for (int i = 0; i < 1000; i ++)
         {
             System.out.println("i=" + i);
             testExtractMovImpl();
+            Thread.sleep((long) (Math.random() * 10)); 
         }
     }
     
@@ -117,17 +118,22 @@ public class TikaIntrinsicAVFfmpegParserTest
         {
             logger.debug("(" + testFilePath + ") " + tikaKey + "=" + metadata.get(tikaKey));
         }
-        
-        String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
-        assertNotNull("Duration was null", duration);
+
+        System.out.println("Printing extractedMetadata after calling parse and before asserting. \n" + extractedMetadata);
+        System.out.println("Done printing extractedMetadata object.");
         
         System.out.println("Printing metadata after calling parse and before asserting. \n" + metadata);
         System.out.println("Done printing metadata object.");
         
+        String duration = metadata.get(PBCore.INSTANTIATION_DURATION);
+//        if (duration == null) 
+//            System.out.println("Duration was null");
+//        else
+//        {
         // Last digit may vary on FFmpeg version
         assertTrue("Expected duration to start with 00:00:01.0",
                 duration.startsWith("00:00:01.0"));
-        
+//        }
         assertEquals("Video", metadata.get(PBCore.ESSENCE_TRACK_TYPE(0)));
         assertEquals("h264", metadata.get(PBCore.ESSENCE_TRACK_ENCODING(0)));
         assertEquals("29.97 fps", metadata.get(PBCore.ESSENCE_TRACK_FRAME_RATE(0)));
